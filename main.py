@@ -66,15 +66,14 @@ def main():
         ref0_img = cv2.imread(ref0_img_path, cv2.IMREAD_GRAYSCALE)
         ref1_img = cv2.imread(ref1_img_path, cv2.IMREAD_GRAYSCALE)
 
-        # Step 2: Divide the image into 16x16 blocks
+        # Step 2:
+        # TODO: apply motion model (gmc.py)
+
+        # Step 3: Divide the image into 16x16 blocks
         target_blocks = divide_into_blocks(target_img, block_size)
         ref0_blocks = divide_into_blocks(ref0_img, block_size)
         ref1_blocks = divide_into_blocks(ref1_img, block_size)
 
-        # Step 3:
-        # TODO: apply motion model (gmc.py)
-
-        
         # Step 4: Select 13,000 blocks
         selected_blocks = select_blocks(target_blocks, num_blocks)
 
