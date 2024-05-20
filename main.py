@@ -5,7 +5,17 @@ import argparse
 import glob
 import pandas as pd
 
-from gmc import block_matching, apply_motion_compensation
+from gmc import feature_matching
+
+def divide_into_128_blocks(image):
+    h, w = image.shape
+    block_h, block_w = h // 4, w // 8  # 8行，每行16個區塊
+    blocks = []
+    for y in range(0, h, block_h):
+        for x in range(0, w, block_w):
+            block = image[y:y+block_h, x:x+block_w]
+            blocks.append((block, (y, x)))
+    return blocks
 
 def divide_into_blocks(image, block_size):
     # Divide an image into non-overlapping blocks of the specified size.
@@ -16,6 +26,14 @@ def divide_into_blocks(image, block_size):
             block = image[i:i+block_size, j:j+block_size]
             blocks.append(block)
     return blocks
+
+def reconstruct_image_from_blocks(blocks, image_shape):
+    compensated_image = np.zeros(image_shape, dtype=np.uint8)
+    for block, (y, x) in blocks:
+        block_h, block_w = block.shape[:2]
+        compensated_image[y:y+block_h, x:x+block_w] = block
+
+    return compensated_image
 
 def select_blocks(blocks, num_blocks):
     selected_blocks = []
@@ -66,13 +84,29 @@ def main():
         ref0_img = cv2.imread(ref0_img_path, cv2.IMREAD_GRAYSCALE)
         ref1_img = cv2.imread(ref1_img_path, cv2.IMREAD_GRAYSCALE)
 
-        # Step 2:
-        # TODO: apply motion model (gmc.py)
+        # # Step 2: Divide the image into 16x16 blocks
+        # target_blocks = divide_into_blocks(target_img, block_size)
+        # ref0_blocks = divide_into_blocks(ref0_img, block_size)
+        # ref1_blocks = divide_into_blocks(ref1_img, block_size)
 
-        # Step 3: Divide the image into 16x16 blocks
-        target_blocks = divide_into_blocks(target_img, block_size)
-        ref0_blocks = divide_into_blocks(ref0_img, block_size)
-        ref1_blocks = divide_into_blocks(ref1_img, block_size)
+        target_blocks = divide_into_128_blocks(target_img)
+        ref0_blocks = divide_into_128_blocks(ref0_img)
+        ref1_blocks = divide_into_128_blocks(ref1_img)
+
+        # Step 3:
+        # TODO: apply motion model (gmc.py)
+        flow = cv2.calcOpticalFlowFarneback(ref0_img, target_img, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+        compensated_blocks = []
+        for ((blk_target, (y,x)), (blk_ref0, (a,b)), (blk_ref1, (c,d))) in zip(target_blocks, ref0_blocks, ref1_blocks):
+            compensated_block = feature_matching(blk_target, blk_ref0, blk_ref1, flow[y:y+blk_target.shape[0], x:x+blk_target.shape[1]])
+            compensated_blocks.append((compensated_block, (y,x)))
+
+        # 根據補償後的block重建整張圖片
+        
+        compensated_image = reconstruct_image_from_blocks(compensated_blocks, target_img.shape)
+        cv2.imwrite(os.path.join(args.output_path, 'compensated_image.png'), compensated_image)
+        # break
 
         # Step 4: Select 13,000 blocks
         selected_blocks = select_blocks(target_blocks, num_blocks)
