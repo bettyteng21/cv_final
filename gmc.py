@@ -21,8 +21,8 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
     kp_ref0, des_ref0 = orb.detectAndCompute(blk_ref0, None)
     kp_ref1, des_ref1 = orb.detectAndCompute(blk_ref1, None)
 
-    if des_target is None or des_ref0 is None or des_ref1 is None:
-        print("No descriptors found, returning original block.")
+    if des_target is None or (des_ref0 is None and des_ref1 is None):
+        # print("No descriptors found, returning original block.")
         if des_ref0 is None:
             return blk_ref1
         else:
@@ -30,11 +30,20 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
 
     # Initiate bf matcher
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    matches0 = bf.match(des_target, des_ref0) 
-    matches0 = sorted(matches0, key=lambda x: x.distance)
+    matches0, matches1 = [],[]
+    if des_ref0 is not None:
+        matches0 = bf.match(des_target, des_ref0) 
+        matches0 = sorted(matches0, key=lambda x: x.distance)
 
-    matches1 = bf.match(des_target, des_ref1) 
-    matches1 = sorted(matches1, key=lambda x: x.distance)
+    if des_ref1 is not None:
+        matches1 = bf.match(des_target, des_ref1) 
+        matches1 = sorted(matches1, key=lambda x: x.distance)
+
+    # Calculate total distance for matches0 and matches1
+    if matches0 is not None:
+        total_distance0 = sum([m.distance for m in matches0])
+    if matches1 is not None:
+        total_distance1 = sum([m.distance for m in matches1])
 
     # Calculate total distance for matches0 and matches1
     total_distance0 = sum([m.distance for m in matches0])
@@ -42,12 +51,12 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
 
     # Choose the matches with the lower total distance (higher similarity)
     if total_distance0 < total_distance1:
-        print('ref0 choosen.')
+        # print('ref0 choosen.')
         chosen_matches = matches0
         kp_ref = kp_ref0
         blk_ref = blk_ref0
     else:
-        print('ref1 choosen.')
+        # print('ref1 choosen.')
         chosen_matches = matches1
         kp_ref = kp_ref1
         blk_ref = blk_ref1
@@ -60,7 +69,7 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
         
         compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]))
     else:
-        print("Not enough matche points, returning original block.")
+        # print("Not enough matche points, returning original block.")
         compensated_block = blk_ref
 
     return compensated_block    
@@ -73,7 +82,7 @@ def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
     kp_ref1, des_ref1 = orb.detectAndCompute(blk_ref1, None)
 
     if des_target is None or (des_ref0 is None and des_ref1 is None):
-        print("No descriptors found, returning original block.")
+        # print("No descriptors found, returning original block.")
         if des_ref0 is None:
             return blk_ref1
         else:
@@ -98,12 +107,12 @@ def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
 
     # Choose the matches with the lower total distance (higher similarity)
     if total_distance0 < total_distance1:
-        print('ref0 choosen.')
+        # print('ref0 choosen.')
         chosen_matches = matches0
         kp_ref = kp_ref0
         blk_ref = blk_ref0
     else:
-        print('ref1 choosen.')
+        # print('ref1 choosen.')
         chosen_matches = matches1
         kp_ref = kp_ref1
         blk_ref = blk_ref1
@@ -117,7 +126,7 @@ def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
         compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]))
 
     else:
-        print("Not enough matche points, returning original block.")
+        # print("Not enough matche points, returning original block.")
         compensated_block = blk_ref
 
     return compensated_block    

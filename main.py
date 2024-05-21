@@ -144,9 +144,16 @@ def main():
         # cv2.imshow("Detected Blocks", image_with_boxes)
         # cv2.waitKey(0)  # Press any key to continue
 
-        # Step 3:
-        # TODO: apply motion model (gmc.py)
+        # Step 3: apply motion model (gmc.py)
         compensated_blocks = []
+
+        # gmc for background (non-bounding-box)
+        blocks = divide_into_blocks(target_img, block_size)
+        nbb_blocks = [(coord, blk) for coord, blk in blocks if target_mask[coord[0]:coord[0]+blk.shape[0], coord[1]:coord[1]+blk.shape[1]].sum() > 0]
+        temp_blocks = motion_compensate_for_nbb(nbb_blocks, ref0_img, ref1_img)
+        compensated_blocks.extend(temp_blocks)
+
+        # gmc for detected objects
         for ((blk_target, (y,x)),idx_ref0, idx_ref1) in zip(target_blocks, ref0_mapping, ref1_mapping):
             (blk_ref0, (y0,x0)),(blk_ref1, (y1,x1)) = ref0_blocks[idx_ref0], ref1_blocks[idx_ref1]
             if idx_ref0 == -1 and idx_ref1 ==-1:
@@ -159,13 +166,6 @@ def main():
             compensated_block = feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1)
             compensated_blocks.append((compensated_block, (y,x)))
         
-        print('Finishing bounding box, starting nbb analyze.')
-
-        blocks = divide_into_blocks(target_img, block_size)
-        nbb_blocks = [(coord, blk) for coord, blk in blocks if target_mask[coord[0]:coord[0]+blk.shape[0], coord[1]:coord[1]+blk.shape[1]].sum() > 0]
-        temp_blocks = motion_compensate_for_nbb(nbb_blocks, ref0_img, ref1_img)
-        compensated_blocks.extend(temp_blocks)
-
         compensated_image = reconstruct_image_from_blocks(compensated_blocks, target_img.shape)
         cv2.imwrite(os.path.join(args.output_path, 'compensated_image.png'), compensated_image)
 
