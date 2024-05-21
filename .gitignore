@@ -1,3 +1,4 @@
 material/
 output/
 __pycache__
+*.weights
