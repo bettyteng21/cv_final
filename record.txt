@@ -1,0 +1,13 @@
+brist + Affine                                      PSNR: 10.41131 output_1
+brist + Perspective                                 PSNR: 9.87534  output_2
+dense_optical_flow                                  PSNR: 11.65230 output_3
+sift + Affine                                       PSNR: 10.38109 output_3
+sift + Perspective                                  PSNR: 9.78927  output_5
+hexagon search motion estimation and compensation   PSNR: 11.70645 output_4
+full search motion estimation and compensation      PSNR: 13.69182 output_0
+
+basic           PSNR: 12.70846 output_6
+window_search   PSNR: 12.64618 output_7
+cross search    PSNR: 10.98805 output_8
+three step      PSNR: 12.69057 output_9
+

@@ -14,8 +14,6 @@ def benchmark(so_path, gt_path):
     psnr = []
     for so_img_path, so_txt_path, gt_img_path in zip(so_img_paths, so_txt_paths, gt_img_paths):
         
-        print('check image... ', so_img_path)
-
         s = np.array(Image.open(so_img_path).convert('L'))
         g = np.array(Image.open(gt_img_path).convert('L'))
         f = open(so_txt_path, 'r')
@@ -55,9 +53,11 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--so_path', type=str)
     parser.add_argument('-g', '--gt_path', type=str)
     args = parser.parse_args()
-
-    so_path = args.so_path
-    gt_path = args.gt_path
+    
+    # so_path = './solution'
+    so_path = './output_6'
+    # so_path = './solution_2'
+    gt_path = './frames'
      
     score = benchmark(so_path, gt_path)
 
