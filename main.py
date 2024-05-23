@@ -9,6 +9,7 @@ from gmc import feature_matching, motion_compensate_for_nbb
 # from segment import load_deeplab_model, segment_image, extract_foreground
 from detect_block import draw_boxes, load_yolo_model, detect_objects, find_corresponding_blocks, retrieve_bounding_box_image
 from select_block import calculate_psnr, select_blocks
+from post_processing import post_process
 
 # Divide image into blocks based on detected objects,
 # return blocks and the masked areas without blocks(1 for no block, 0 for has block)
@@ -177,12 +178,36 @@ def main():
         
         compensated_image = reconstruct_image_from_blocks(compensated_blocks, target_img.shape)
 
-        cv2.imwrite(os.path.join(args.output_path, 'compensate/'+str(idx)+'.png'), compensated_image)
+        cv2.imwrite(os.path.join(args.output_path, f'compensate/{target:03}.png'), compensated_image)
 
         # Step 6: Select 13,000 blocks
         compensated_blocks = divide_into_blocks(compensated_image, 16)
+
+        # Step 7: Post-processing
+        # for idx, (block, (y,x)) in enumerate(compensated_blocks):
+        #     block = post_process(block)
+        #     compensated_blocks[idx] = (block, (y,x))
+
         original_blocks = divide_into_blocks(target_img, 16)
         selected_blocks = select_blocks(compensated_blocks, original_blocks, num_blocks)
+        
+        # ##############################################
+        # # eval
+        # mask = np.array(selected_blocks).astype(bool)
+        # assert np.sum(mask) == 13000, 'The number of selection blocks should be 13000'
+
+
+        # s = compensated_image.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
+        # g = target_img.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
+        
+        # s = s[mask]
+        # g = g[mask]
+        # assert not (s == g).all(), "The prediction should not be the same as the ground truth"
+
+        # mse = np.sum((s-g)**2)/s.size
+        # psnr_list.append(10*np.log10(255/mse))
+        
+        # ###############################################
 
         # Step 7: output selection map: s_xxx.txt
         output_path = os.path.join(args.output_path, f'smap_txt/s_{target:03}.txt')
@@ -190,9 +215,6 @@ def main():
         for s in selected_blocks:
             smap_file.write(str(s)+'\n')
         smap_file.close()
-
-        psnr = calculate_psnr(compensated_image, target_img)
-        psnr_list.append(psnr)
     
     # psnr for every FULL compensated image
     psnr_path = os.path.join(args.output_path, f'psnr.txt')
@@ -201,6 +223,9 @@ def main():
         psnr_file.write(str(s)+'\n')
     psnr_file.close()
 
+    # psnr_list = np.array(psnr_list)
+    # avg_psnr = np.mean(psnr_list)
+    # print('Avg psnr: '+str(avg_psnr))
+
 if __name__ == '__main__':
     main()
-

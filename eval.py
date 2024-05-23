@@ -2,13 +2,13 @@ import os, sys, argparse
 import numpy as np
 from PIL import Image
 
-def benchmark(so_path, gt_path):
+def benchmark(so_path, txt_path, gt_path):
 
     image_name = ['%03d.png'% i for i in range(129) if i not in [0, 32, 64, 96, 128]]
     txt_name   = ['s_%03d.txt'% i for i in range(129) if i not in [0, 32, 64, 96, 128]]
 
     so_img_paths = [os.path.join(so_path,name) for name in image_name]
-    so_txt_paths = [os.path.join(so_path,name) for name in txt_name]
+    so_txt_paths = [os.path.join(txt_path,name) for name in txt_name]
     gt_img_paths = [os.path.join(gt_path,name) for name in image_name]
 
     psnr = []
@@ -53,12 +53,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--so_path', type=str)
+    parser.add_argument('-t', '--txt_path', type=str)
     parser.add_argument('-g', '--gt_path', type=str)
     args = parser.parse_args()
 
     so_path = args.so_path
+    txt_path = args.txt_path
     gt_path = args.gt_path
      
-    score = benchmark(so_path, gt_path)
+    score = benchmark(so_path, txt_path, gt_path)
 
     print('PSNR: %.5f\n'%(score))
