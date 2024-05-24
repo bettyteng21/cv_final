@@ -8,7 +8,7 @@ import pandas as pd
 from gmc import feature_matching, motion_compensate_for_nbb
 # from segment import load_deeplab_model, segment_image, extract_foreground
 from detect_block import draw_boxes, load_yolo_model, detect_objects, find_corresponding_blocks, retrieve_bounding_box_image
-from select_block import calculate_psnr, select_blocks
+from select_block import select_blocks
 from post_processing import post_process
 
 # Divide image into blocks based on detected objects,
@@ -98,7 +98,7 @@ def main():
         ref0_img = cv2.imread(ref0_img_path, cv2.IMREAD_GRAYSCALE)
         ref1_img = cv2.imread(ref1_img_path, cv2.IMREAD_GRAYSCALE)
         
-        # # Step 2: Segment the images to get foreground masks
+        # # Step 2: Segment the images to get foreground masks (segment.py)
         # target_mask = segment_image(target_img, segmentation_model)
         # ref0_mask = segment_image(ref0_img, segmentation_model)
 
@@ -111,7 +111,7 @@ def main():
         # cv2.imshow("target_foreground", ref0_foreground)
         # cv2.waitKey(0)  # Press any key to continue
 
-        # Step 4: Detect objects in the foreground
+        # Step 4: Detect objects in the foreground (detect_block.py)
         ref0_boxes = detect_objects(ref0_img, net, output_layers)
         ref1_boxes = detect_objects(ref1_img, net, output_layers)
         target_boxes = detect_objects(target_img, net, output_layers)
@@ -141,29 +141,30 @@ def main():
                 ref1_boxes_img.append(img)
                 # cv2.imwrite('./output/ref1/'+str(i)+'.png', img)
 
+        # 找出target obj對應的ref0 obj & ref1 obj，並記錄他們對應的index
         ref0_mapping = find_corresponding_blocks(target_boxes_img, ref0_boxes_img, threshold=10)
         ref1_mapping = find_corresponding_blocks(target_boxes_img, ref1_boxes_img, threshold=10)
 
         # Output the mapping
-        with open(f"{args.output_path}/mapping.txt", "w") as f:
-            for i, (r0, r1) in enumerate(zip(ref0_mapping, ref1_mapping)):
-                f.write(f"Target object {i}: ref0 block {r0}, ref1 block {r1}\n")
+        # with open(f"{args.output_path}/mapping.txt", "w") as f:
+        #     for i, (r0, r1) in enumerate(zip(ref0_mapping, ref1_mapping)):
+        #         f.write(f"Target object {i}: ref0 block {r0}, ref1 block {r1}\n")
         
         # Draw and display the detected blocks
-        image_with_boxes = draw_boxes(target_img.copy(), target_boxes)
-        image_with_boxes = cv2.resize(image_with_boxes, (image_with_boxes.shape[1]//2, image_with_boxes.shape[0]//2))
+        # image_with_boxes = draw_boxes(target_img.copy(), target_boxes)
+        # image_with_boxes = cv2.resize(image_with_boxes, (image_with_boxes.shape[1]//2, image_with_boxes.shape[0]//2))
         # cv2.imwrite(os.path.join(args.output_path, 'detected_blocks.png'), image_with_boxes)
 
         # Step 5: apply motion model (gmc.py)
         compensated_blocks = []
 
-        # gmc for background (non-bounding-box)
+        # Step 5-1: gmc for background (non-bounding-box)
         blocks = divide_into_blocks(target_img, block_size)
         nbb_blocks = [(blk,coord) for blk,coord in blocks if target_mask[coord[0]:coord[0]+blk.shape[0], coord[1]:coord[1]+blk.shape[1]].sum() > 0]
         temp_blocks = motion_compensate_for_nbb(nbb_blocks, ref0_img, ref1_img)
         compensated_blocks.extend(temp_blocks)
 
-        # gmc for detected objects
+        # Step 5-2: gmc for detected objects
         for ((blk_target, (y,x)),idx_ref0, idx_ref1) in zip(target_blocks, ref0_mapping, ref1_mapping):
             (blk_ref0, (y0,x0)),(blk_ref1, (y1,x1)) = ref0_blocks[idx_ref0], ref1_blocks[idx_ref1]
             if idx_ref0 == -1 and idx_ref1 ==-1:
@@ -180,10 +181,10 @@ def main():
 
         cv2.imwrite(os.path.join(args.output_path, f'compensate/{target:03}.png'), compensated_image)
 
-        # Step 6: Select 13,000 blocks
+        # Step 6: Select 13,000 blocks (select_block.py)
         compensated_blocks = divide_into_blocks(compensated_image, 16)
 
-        # Step 7: Post-processing
+        # Step 7: Post-processing (post_processing.py)
         # for idx, (block, (y,x)) in enumerate(compensated_blocks):
         #     block = post_process(block)
         #     compensated_blocks[idx] = (block, (y,x))
@@ -192,20 +193,20 @@ def main():
         selected_blocks = select_blocks(compensated_blocks, original_blocks, num_blocks)
         
         # ##############################################
-        # # eval
-        # mask = np.array(selected_blocks).astype(bool)
-        # assert np.sum(mask) == 13000, 'The number of selection blocks should be 13000'
+        # eval
+        mask = np.array(selected_blocks).astype(bool)
+        assert np.sum(mask) == 13000, 'The number of selection blocks should be 13000'
 
 
-        # s = compensated_image.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
-        # g = target_img.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
+        s = compensated_image.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
+        g = target_img.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
         
-        # s = s[mask]
-        # g = g[mask]
-        # assert not (s == g).all(), "The prediction should not be the same as the ground truth"
+        s = s[mask]
+        g = g[mask]
+        assert not (s == g).all(), "The prediction should not be the same as the ground truth"
 
-        # mse = np.sum((s-g)**2)/s.size
-        # psnr_list.append(10*np.log10(255/mse))
+        mse = np.sum((s-g)**2)/s.size
+        psnr_list.append(10*np.log10(255/mse))
         
         # ###############################################
 
@@ -223,9 +224,9 @@ def main():
         psnr_file.write(str(s)+'\n')
     psnr_file.close()
 
-    # psnr_list = np.array(psnr_list)
-    # avg_psnr = np.mean(psnr_list)
-    # print('Avg psnr: '+str(avg_psnr))
+    psnr_list = np.array(psnr_list)
+    avg_psnr = np.mean(psnr_list)
+    print('Avg psnr: '+str(avg_psnr))
 
 if __name__ == '__main__':
     main()

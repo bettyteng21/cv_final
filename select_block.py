@@ -7,7 +7,6 @@ def select_blocks(blocks, reference_blocks, num_blocks):
     '''
     scores = np.zeros(len(blocks))
     score_list = []
-    # s,g = np.zeros((len(blocks)),blocks[0].shape[0], blocks[0].shape[1]),np.zeros(len(blocks))
 
     for idx, (block,(y,x)) in enumerate(blocks):
         (ref_block,(a,b)) = reference_blocks[idx]

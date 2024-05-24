@@ -63,6 +63,7 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
     src_pts = np.float32([kp_ref[m.trainIdx].pt for m in chosen_matches]).reshape(-1, 1, 2)
     
     if(len(dst_pts) > 8):
+        # calculate homography matrix if there's enough points
         M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
         compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]))
     else:
@@ -122,9 +123,10 @@ def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
     src_pts = np.float32([kp_ref[m.trainIdx].pt for m in chosen_matches]).reshape(-1, 1, 2)
     
     if(len(dst_pts) > 8):
+        # calculate homography matrix if there's enough points
         M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
         compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]))
     else:
         compensated_block = blk_ref
 
-    return compensated_block    
+    return compensated_block  

@@ -9,3 +9,5 @@ output/*
 __pycache__
 *.weights
 *.pth
+
+output_0/
