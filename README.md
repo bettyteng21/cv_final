@@ -1,0 +1,13 @@
+# Team23 cv final
+## 環境架設
+* python 3.7
+* ```pip install -r requirements.txt```
+
+## 取出影片中的frames、建Hierarchical-B reference table
+* 下載影片: http://140.112.48.121:5000/sharing/ahoZKsMDw
+* ```python3 yuv2png.py --yuv_file 影片路徑 --output_dir 輸出路徑```
+* ```python3 csv_table_generator.py```
+
+## main.py
+
+* ```python3 main.py --output_path 輸出路徑```

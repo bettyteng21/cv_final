@@ -36,11 +36,9 @@ def benchmark(so_path, gt_path):
 
         mse = np.sum((s-g)**2)/s.size
         psnr.append(10*np.log10(255/mse))
-
     
     psnr = np.array(psnr)
     avg_psnr = np.sum(psnr) / len(psnr)
-
 
     return avg_psnr
 
@@ -54,11 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gt_path', type=str)
     args = parser.parse_args()
     
-    # so_path = './solution'
-    so_path = './output_6'
-    # so_path = './solution_2'
-    gt_path = './frames'
-     
-    score = benchmark(so_path, gt_path)
+    score = benchmark(args.so_path, args.gt_path)
 
     print('PSNR: %.5f\n'%(score))
+    
