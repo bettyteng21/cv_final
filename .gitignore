@@ -1,6 +1,9 @@
 material/
 
-output
+!ouput/
+output/*
+!output/[0-9]*.png
+!output/s_*.txt
 
 __pycache__
 *.weights
