@@ -1,2 +1,9 @@
 material/
 output/
+*.pth
+*.weights
+
+output/
+output_0/
+
+__pycache__/
