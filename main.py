@@ -4,7 +4,7 @@ import os
 import argparse
 import glob
 import pandas as pd
-from gmc import block_matching,  motion_estimation, global_motion_compensation
+from gmc import *
 from select_block import select_blocks
 from eval import benchmark
 
@@ -21,7 +21,7 @@ def divide_into_blocks(image, block_size=16):
 def main():
     parser = argparse.ArgumentParser(description='main function of GMC')
     parser.add_argument('--input_path', default='./frames/', help='path to read input frames')
-    parser.add_argument('--output_path', default='./output/', help='path to put output files')
+    parser.add_argument('--output_path', default='./1616/', help='path to put output files')
     parser.add_argument('--csv_file', default='./processing_order.csv', help='processing order CSV file')
     args = parser.parse_args()
     
@@ -32,8 +32,13 @@ def main():
         return
     
     block_size = 16
+    search_range = 16
     num_blocks = 13000
-
+    frame_list = ['8', '12', '16', '20', '24', 
+                  '28', '36', '40', '44', '48', 
+                  '52', '56', '60', '72', '80', 
+                  '88', '104', '112']
+    # loaded_array = np.load('./npy/array.npy')
     df = pd.read_csv(args.csv_file)
     
     for idx, row in df.iterrows():
@@ -42,7 +47,8 @@ def main():
         ref1 = row['Reference Pic1']
         if '(X)' in str(target):
             continue
-
+        
+        target_str, ref0_str, ref1_str = target, ref0, ref1
         target, ref0, ref1 = int(target), int(ref0), int(ref1)
         target_img_path = os.path.join(args.input_path, f'{target:03}.png')
         ref0_img_path = os.path.join(args.input_path, f'{ref0:03}.png')
@@ -51,10 +57,20 @@ def main():
         target_img = cv2.imread(target_img_path, cv2.IMREAD_GRAYSCALE)
         ref0_img = cv2.imread(ref0_img_path, cv2.IMREAD_GRAYSCALE)
         ref1_img = cv2.imread(ref1_img_path, cv2.IMREAD_GRAYSCALE)
+        print(target_str)
         
-        motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img)
+        motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, block_size=block_size, search_range=search_range)
         motion_vectors = (motion_vectors_ref0_to_target, motion_vectors_ref1_to_target)
         compensated_img = global_motion_compensation(ref0_img, ref1_img, motion_vectors, block_size=block_size)
+        
+        # if target_str in frame_list:
+        #     loaded_array = np.load(f'./npy/{target:03}')
+        #     compensated_img = apply_Optical_Flow_Farneback(ref0_img, ref1_img, loaded_array)
+        # else:
+        #     motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, block_size=block_size, search_range=search_range)
+        #     motion_vectors = (motion_vectors_ref0_to_target, motion_vectors_ref1_to_target)
+        #     compensated_img = global_motion_compensation(ref0_img, ref1_img, motion_vectors, block_size=block_size)
+
         cv2.imwrite(os.path.join(args.output_path, f'{target:03}.png'), compensated_img)
         
         compensated_blocks = divide_into_blocks(compensated_img, 16)

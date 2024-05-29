@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 def block_matching(ref_frame, target_block, y, x, block_size, search_range):
     min_mse = float('inf')
@@ -55,3 +56,32 @@ def global_motion_compensation(ref_frame0, ref_frame1, motion_vectors, block_siz
     predicted_frame = np.clip(predicted_frame, 0, 255).astype(np.uint8)
 
     return predicted_frame
+
+
+# def apply_Optical_Flow_Farneback(ref_frame0, ref_frame1, target_frame):
+#     flow = cv2.calcOpticalFlowFarneback(ref_frame0, ref_frame1, None, pyr_scale=0.5, levels=3, winsize=15, iterations=3, poly_n=5, poly_sigma=1.2, flags=0) / 2
+#     h, w = ref_frame0.shape
+#     grid_x, grid_y = np.meshgrid(np.arange(w), np.arange(h))
+#     map_x = (grid_x + flow[..., 0]).astype(np.float32)
+#     map_y = (grid_y + flow[..., 1]).astype(np.float32)
+#     target_from_ref0 = cv2.remap(ref_frame0, map_x, map_y, interpolation=cv2.INTER_LINEAR)
+#     target_from_ref1 = cv2.remap(ref_frame1, map_x, map_y, interpolation=cv2.INTER_LINEAR)
+#     predicted_frame = (target_from_ref0 * 0.52 + target_from_ref1 * 0.45)
+#     X = np.linalg.lstsq(predicted_frame, target_frame, rcond=None)[0]
+#     predicted_frame = np.dot(predicted_frame, X).astype(np.uint8)
+    
+#     return predicted_frame 
+
+def apply_Optical_Flow_Farneback(ref_frame0, ref_frame1, fine_tune_matrix):
+    flow = cv2.calcOpticalFlowFarneback(ref_frame0, ref_frame1, None, pyr_scale=0.5, levels=3, winsize=15, iterations=3, poly_n=5, poly_sigma=1.2, flags=0) / 2
+    h, w = ref_frame0.shape
+    grid_x, grid_y = np.meshgrid(np.arange(w), np.arange(h))
+    map_x = (grid_x + flow[..., 0]).astype(np.float32)
+    map_y = (grid_y + flow[..., 1]).astype(np.float32)
+    target_from_ref0 = cv2.remap(ref_frame0, map_x, map_y, interpolation=cv2.INTER_LINEAR)
+    target_from_ref1 = cv2.remap(ref_frame1, map_x, map_y, interpolation=cv2.INTER_LINEAR)
+    predicted_frame = (target_from_ref0 * 0.52 + target_from_ref1 * 0.45)
+    predicted_frame = np.dot(predicted_frame, fine_tune_matrix).astype(np.uint8)
+    
+    return predicted_frame 
+
