@@ -1,4 +1,3 @@
-import numpy as np
 import cv2
 import os
 import argparse
@@ -62,14 +61,6 @@ def main():
         motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, block_size=block_size, search_range=search_range)
         motion_vectors = (motion_vectors_ref0_to_target, motion_vectors_ref1_to_target)
         compensated_img = global_motion_compensation(ref0_img, ref1_img, motion_vectors, block_size=block_size)
-        
-        # if target_str in frame_list:
-        #     loaded_array = np.load(f'./npy/{target:03}')
-        #     compensated_img = apply_Optical_Flow_Farneback(ref0_img, ref1_img, loaded_array)
-        # else:
-        #     motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, block_size=block_size, search_range=search_range)
-        #     motion_vectors = (motion_vectors_ref0_to_target, motion_vectors_ref1_to_target)
-        #     compensated_img = global_motion_compensation(ref0_img, ref1_img, motion_vectors, block_size=block_size)
 
         cv2.imwrite(os.path.join(args.output_path, f'{target:03}.png'), compensated_img)
         
