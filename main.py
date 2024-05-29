@@ -94,11 +94,6 @@ def main():
         target, ref0, ref1 = int(target), int(ref0), int(ref1)
         print('\nCurrent processing order '+str(idx)+', target frame '+str(target))
 
-        if (target % 32) in [16,8,24]:
-            print('aa')
-        else:
-            continue
-
         target_img_path = os.path.join(args.input_path, f'{target:03}.png')
         ref0_img_path = os.path.join(args.input_path, f'{ref0:03}.png')
         ref1_img_path = os.path.join(args.input_path, f'{ref1:03}.png')
@@ -190,16 +185,16 @@ def main():
         assert np.sum(mask) == 13000, 'The number of selection blocks should be 13000'
 
 
-        s = compensated_image.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
-        g = target_img.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16)
+        s = compensated_image.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16).astype(int)
+        g = target_img.reshape(2160//16, 16, 3840//16, 16).swapaxes(1, 2).reshape(-1, 16, 16).astype(int)
         
         s = s[mask]
         g = g[mask]
         assert not (s == g).all(), "The prediction should not be the same as the ground truth"
 
         mse = np.sum((s-g)**2)/s.size
-        psnr_list.append(10*np.log10(255/mse))
-        print('Current psnr= '+str(10*np.log10(255/mse)))
+        psnr_list.append(10*np.log10(255**2/mse))
+        print('Current psnr= '+str(10*np.log10(255**2/mse)))
         # ###############################################
 
         # Step 7: output selection map: s_xxx.txt
