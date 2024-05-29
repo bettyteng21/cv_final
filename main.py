@@ -37,7 +37,6 @@ def main():
                   '28', '36', '40', '44', '48', 
                   '52', '56', '60', '72', '80', 
                   '88', '104', '112']
-    # loaded_array = np.load('./npy/array.npy')
     df = pd.read_csv(args.csv_file)
     
     for idx, row in df.iterrows():
