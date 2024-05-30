@@ -167,7 +167,7 @@ def main():
         else:
             print('Using model2...')
 
-            motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img)
+            motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, search_range=16)
             motion_vectors = (motion_vectors_ref0_to_target, motion_vectors_ref1_to_target)
             compensated_image = global_motion_compensation(ref0_img, ref1_img, motion_vectors, block_size=block_size)
 
