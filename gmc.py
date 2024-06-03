@@ -58,20 +58,21 @@ def global_motion_compensation(ref_frame0, ref_frame1, motion_vectors, block_siz
     return predicted_frame
 
 # for non-bounding-box blocks
-def motion_compensate_for_nbb(blocks, ref0_image, ref1_image):
+def motion_compensate_for_nbb(blocks, ref0_image, ref1_image, lun_image):
     compensated_blocks = []
     for block,(y,x) in blocks:
         # Find corresponding blocks in reference images
         ref0_block = ref0_image[y:y+block.shape[0], x:x+block.shape[1]]
         ref1_block = ref1_image[y:y+block.shape[0], x:x+block.shape[1]]
+        lun_block = lun_image[y:y+block.shape[0], x:x+block.shape[1]]
         
         # Apply feature matching for motion compensation
-        compensated_block = feature_matching_for_nbb(block, ref0_block, ref1_block)
+        compensated_block = feature_matching_for_nbb(block, ref0_block, ref1_block, lun_block)
         compensated_blocks.append((compensated_block, (y, x)))
     return compensated_blocks
 
 # for non-bounding-box blocks
-def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
+def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1, blk_lun):
     # Initiate SURF detector
     surf = cv2.xfeatures2d.SURF_create(300)
     kp_target, des_target = surf.detectAndCompute(blk_target,None)
@@ -117,17 +118,25 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
     dst_pts = np.float32([kp_target[m.queryIdx].pt for m in chosen_matches]).reshape(-1, 1, 2)
     src_pts = np.float32([kp_ref[m.trainIdx].pt for m in chosen_matches]).reshape(-1, 1, 2)
     
+    result = np.zeros_like(blk_target)
     if(len(dst_pts) > 8):
         # calculate homography matrix if there's enough points
         M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]))
-    else:
-        compensated_block = blk_ref
+        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]),borderMode=cv2.BORDER_CONSTANT,borderValue=(0,0,0))
 
-    return compensated_block    
+        ret,thresh=cv2.threshold(compensated_block,1,255,0)
+        mm,contours,hierarchy=cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+        mask_bool = mm.astype(bool)
+        result[mask_bool] = compensated_block[mask_bool]
+        result[~mask_bool] = blk_lun[~mask_bool]
+            
+    else:
+        result = blk_ref
+
+    return result    
 
 # for bounding-box blocks (detected objects)
-def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
+def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1, blk_lun):
     '''
     When idx_ref0==-1 or idx_ref1==-1:
         for this target block, there's no corresponding obj in ref0/ref1 blocks.
@@ -179,8 +188,21 @@ def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
     if(len(dst_pts) > 8):
         # calculate homography matrix if there's enough points
         M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]))
-    else:
-        compensated_block = blk_ref
+        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]),borderMode=cv2.BORDER_CONSTANT,borderValue=(0,0,0))
 
-    return compensated_block  
+        result = np.zeros_like(compensated_block)
+        blk_lun = cv2.resize(blk_lun, (compensated_block.shape[1], compensated_block.shape[0]))
+
+        ret,thresh=cv2.threshold(compensated_block,1,255,0)
+        mm,contours,hierarchy=cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+
+        if contours:
+            mask_bool = mm.astype(bool)
+            result[mask_bool] = compensated_block[mask_bool]
+            result[~mask_bool] = blk_lun[~mask_bool]
+        else:
+            result = compensated_block
+    else:
+        result = blk_ref
+
+    return result  

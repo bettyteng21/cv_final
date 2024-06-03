@@ -94,6 +94,11 @@ def main():
         target, ref0, ref1 = int(target), int(ref0), int(ref1)
         print('\nCurrent processing order '+str(idx)+', target frame '+str(target))
 
+        if (target % 32) in [16,8,24]:
+            pass
+        else:
+            continue
+
         target_img_path = os.path.join(args.input_path, f'{target:03}.png')
         ref0_img_path = os.path.join(args.input_path, f'{ref0:03}.png')
         ref1_img_path = os.path.join(args.input_path, f'{ref1:03}.png')
@@ -142,7 +147,13 @@ def main():
             # Step-1: gmc for background (non-bounding-box)
             blocks = divide_into_blocks(target_img, 512)
             nbb_blocks = [(blk,coord) for blk,coord in blocks if target_mask[coord[0]:coord[0]+blk.shape[0], coord[1]:coord[1]+blk.shape[1]].sum() > 0]
-            temp_blocks = motion_compensate_for_nbb(nbb_blocks, ref0_img, ref1_img)
+
+            # get Lun's image
+            motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, search_range=16)
+            motion_vectors = (motion_vectors_ref0_to_target, motion_vectors_ref1_to_target)
+            lun_img = global_motion_compensation(ref0_img, ref1_img, motion_vectors, block_size=block_size)
+
+            temp_blocks = motion_compensate_for_nbb(nbb_blocks, ref0_img, ref1_img, lun_img)
             compensated_blocks.extend(temp_blocks)
 
             # Step-2: gmc for detected objects
@@ -155,7 +166,9 @@ def main():
                 elif idx_ref1 == -1:
                     blk_ref1 = np.full_like(blk_ref1, 80)
 
-                compensated_block = feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1)
+                lun_block = lun_img[y:y+blk_target.shape[0], x:x+blk_target.shape[1]]
+                
+                compensated_block = feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1, lun_block)
                 compensated_blocks.append((compensated_block, (y,x)))
             
             compensated_image = reconstruct_image_from_blocks(compensated_blocks, target_img.shape)
@@ -164,7 +177,7 @@ def main():
             # compensated_image = post_process(compensated_image, target_frame_idx=target, gt_path=args.input_path)
 
         # end if in model1
-        else:
+        else: # Lun's method
             print('Using model2...')
 
             motion_vectors_ref0_to_target, motion_vectors_ref1_to_target = motion_estimation(ref0_img, ref1_img, target_img, search_range=16)
