@@ -1,13 +1,4 @@
 material/
-
-!output/
-output/*
-!output/compensate/
-!output/smap_txt/
-!output/psnr.txt
-
 __pycache__
 *.weights
 *.pth
-
-output_0/
