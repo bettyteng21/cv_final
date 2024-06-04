@@ -6,19 +6,7 @@ import glob
 import pandas as pd
 
 from gmc import motion_compensate_for_nbb
-# from detect_block import load_yolo_model, detect_objects, find_corresponding_blocks, retrieve_bounding_box_image
 from select_block import select_blocks
-
-# # Divide image into blocks based on detected objects,
-# # return blocks and the masked areas without blocks(1 for no block, 0 for has block)
-# def divide_into_object_based_blocks(image, boxes):
-#     blocks = []
-#     mask = np.zeros(image.shape, dtype=np.uint8)
-#     for (x, y, w, h) in boxes:
-#         block = image[y:y+h, x:x+w]
-#         blocks.append((block, (y, x)))
-#         mask[y:y+h, x:x+w] = 255
-#     return blocks, cv2.bitwise_not(mask)
 
 # Divide an image into non-overlapping blocks of the specified size.
 def divide_into_blocks(image, block_size):
@@ -63,9 +51,6 @@ def main():
 
     df = pd.read_csv(args.csv_file)
 
-    # Load models
-    # net, output_layers = load_yolo_model()
-
     for idx, row in df.iterrows():
 
         target = row['Target Picture']
@@ -91,37 +76,6 @@ def main():
         target_img = cv2.imread(target_img_path, cv2.IMREAD_GRAYSCALE)
         ref0_img = cv2.imread(ref0_img_path, cv2.IMREAD_GRAYSCALE)
         ref1_img = cv2.imread(ref1_img_path, cv2.IMREAD_GRAYSCALE)
-        
-        # # Step: Detect objects in the foreground (detect_block.py)
-        # ref0_boxes = detect_objects(ref0_img, net, output_layers)
-        # ref1_boxes = detect_objects(ref1_img, net, output_layers)
-        # target_boxes = detect_objects(target_img, net, output_layers)
-
-        # target_blocks, target_mask = divide_into_object_based_blocks(target_img, target_boxes)
-        # ref0_blocks, ref0_mask = divide_into_object_based_blocks(ref0_img, ref0_boxes)
-        # ref1_blocks, ref1_mask = divide_into_object_based_blocks(ref1_img, ref1_boxes)
-
-        # target_boxes_img = []
-        # ref0_boxes_img = []
-        # ref1_boxes_img = []
-        # for i in range(len(target_blocks)):
-        #     img = retrieve_bounding_box_image(target_blocks[i])
-        #     if img.size != 0:
-        #         target_boxes_img.append(img)
-
-        # for i in range(len(ref0_blocks)):
-        #     img = retrieve_bounding_box_image(ref0_blocks[i])
-        #     if img.size != 0:
-        #         ref0_boxes_img.append(img)
-
-        # for i in range(len(ref1_blocks)):
-        #     img = retrieve_bounding_box_image(ref1_blocks[i])
-        #     if img.size != 0:
-        #         ref1_boxes_img.append(img)
-
-        # # 找出target obj對應的ref0 obj & ref1 obj，並記錄他們對應的index
-        # ref0_mapping = find_corresponding_blocks(target_boxes_img, ref0_boxes_img, threshold=10)
-        # ref1_mapping = find_corresponding_blocks(target_boxes_img, ref1_boxes_img, threshold=10)
 
         # Step: apply motion model (gmc.py)
         compensated_blocks = []
@@ -131,19 +85,6 @@ def main():
         temp_blocks = motion_compensate_for_nbb(blocks, ref0_img, ref1_img, target)
         compensated_blocks.extend(temp_blocks)
 
-        # # Step-2: gmc for detected objects
-        # for ((blk_target, (y,x)),idx_ref0, idx_ref1) in zip(target_blocks, ref0_mapping, ref1_mapping):
-        #     (blk_ref0, (y0,x0)),(blk_ref1, (y1,x1)) = ref0_blocks[idx_ref0], ref1_blocks[idx_ref1]
-        #     if idx_ref0 == -1 and idx_ref1 ==-1:
-        #         continue # no corresponding object
-        #     elif idx_ref0 == -1:
-        #         blk_ref0 = np.full_like(blk_ref0, 80)
-        #     elif idx_ref1 == -1:
-        #         blk_ref1 = np.full_like(blk_ref1, 80)
-
-        #     compensated_block = feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1)
-        #     compensated_blocks.append((compensated_block, (y,x)))
-        
         compensated_image = reconstruct_image_from_blocks(compensated_blocks, target_img.shape)
 
         cv2.imwrite(os.path.join(args.output_path, f'{target:03}.png'), compensated_image)
@@ -170,7 +111,6 @@ def main():
         psnr_curr = 10*np.log10((255**2)/mse)
         psnr_list.append(psnr_curr)
         print('Current psnr= '+str(psnr_curr))
-        
         # ###############################################
 
         # Step: output selection map: s_xxx.txt

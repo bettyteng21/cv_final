@@ -8,6 +8,3 @@
 * ```python3 yuv2png.py --yuv_file 影片路徑 --output_dir 輸出路徑```
 * ```python3 csv_table_generator.py```
 
-## main.py
-
-* 下載yolov3.weights: https://github.com/patrick013/Object-Detection---Yolov3/blob/master/model/yolov3.weights
