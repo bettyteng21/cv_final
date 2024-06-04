@@ -62,10 +62,12 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1):
     dst_pts = np.float32([kp_target[m.queryIdx].pt for m in chosen_matches]).reshape(-1, 1, 2)
     src_pts = np.float32([kp_ref[m.trainIdx].pt for m in chosen_matches]).reshape(-1, 1, 2)
     
+    # result = np.full_like(blk_target, 80)
     if(len(dst_pts) > 8):
         # calculate homography matrix if there's enough points
         M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]),borderMode=cv2.BORDER_CONSTANT,borderValue=(80,80,80))
+        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]), borderMode=cv2.BORDER_REPLICATE, flags=cv2.INTER_CUBIC)
+
     else:
         compensated_block = blk_ref
 
@@ -125,7 +127,7 @@ def feature_matching(blk_target, blk_ref0, blk_ref1, idx_ref0, idx_ref1):
     if(len(dst_pts) > 8):
         # calculate homography matrix if there's enough points
         M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts)
-        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]),borderMode=cv2.BORDER_CONSTANT,borderValue=(80,80,80))
+        compensated_block = cv2.warpAffine(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]),borderMode=cv2.BORDER_REPLICATE, flags=cv2.INTER_CUBIC)
     else:
         compensated_block = blk_ref
 

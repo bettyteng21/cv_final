@@ -6,7 +6,7 @@ import glob
 import pandas as pd
 
 from gmc import feature_matching, motion_compensate_for_nbb
-from detect_block import draw_boxes, load_yolo_model, detect_objects, find_corresponding_blocks, retrieve_bounding_box_image
+from detect_block import load_yolo_model, detect_objects, find_corresponding_blocks, retrieve_bounding_box_image
 from select_block import select_blocks
 
 # Divide image into blocks based on detected objects,
@@ -39,7 +39,7 @@ def reconstruct_image_from_blocks(blocks, image_shape):
         block_h, block_w = block.shape[:2]
         # Ensure the block fits within the image dimensions
         if y + block_h > image_shape[0] or x + block_w > image_shape[1]:
-            block = cv2.resize(block, (min(block_w, image_shape[1]-x), min(block_h, image_shape[0]-y)))
+            block = cv2.resize(block, (min(block_w, image_shape[1]-x), min(block_h, image_shape[0]-y)), interpolation=cv2.INTER_CUBIC)
         compensated_image[y:y+block_h, x:x+block_w] = block
 
     return compensated_image
@@ -65,7 +65,6 @@ def main():
 
     # Load models
     net, output_layers = load_yolo_model()
-    # segmentation_model = load_deeplab_model()
 
     for idx, row in df.iterrows():
 
@@ -105,20 +104,28 @@ def main():
             img = retrieve_bounding_box_image(target_blocks[i])
             if img.size != 0:
                 target_boxes_img.append(img)
+                # cv2.imwrite('./temp_output/target/'+str(i)+'.png', img)
 
         for i in range(len(ref0_blocks)):
             img = retrieve_bounding_box_image(ref0_blocks[i])
             if img.size != 0:
                 ref0_boxes_img.append(img)
+                # cv2.imwrite('./temp_output/ref0/'+str(i)+'.png', img)
 
         for i in range(len(ref1_blocks)):
             img = retrieve_bounding_box_image(ref1_blocks[i])
             if img.size != 0:
                 ref1_boxes_img.append(img)
+                # cv2.imwrite('./temp_output/ref1/'+str(i)+'.png', img)
 
         # 找出target obj對應的ref0 obj & ref1 obj，並記錄他們對應的index
         ref0_mapping = find_corresponding_blocks(target_boxes_img, ref0_boxes_img, threshold=10)
         ref1_mapping = find_corresponding_blocks(target_boxes_img, ref1_boxes_img, threshold=10)
+
+        # Output the mapping	 
+        # with open(f"./temp_output/mapping.txt", "w") as f:	
+        #     for i, (r0, r1) in enumerate(zip(ref0_mapping, ref1_mapping)):	        
+        #         f.write(f"Target object {i}: ref0 block {r0}, ref1 block {r1}\n")
 
         # Step: apply motion model (gmc.py)
         compensated_blocks = []
@@ -132,7 +139,7 @@ def main():
         for ((blk_target, (y,x)),idx_ref0, idx_ref1) in zip(target_blocks, ref0_mapping, ref1_mapping):
             (blk_ref0, (y0,x0)),(blk_ref1, (y1,x1)) = ref0_blocks[idx_ref0], ref1_blocks[idx_ref1]
             if idx_ref0 == -1 and idx_ref1 ==-1:
-                continue
+                continue # no corresponding object
             elif idx_ref0 == -1:
                 blk_ref0 = np.full_like(blk_ref0, 80)
             elif idx_ref1 == -1:

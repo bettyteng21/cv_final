@@ -2,3 +2,4 @@ material/
 __pycache__
 *.weights
 *.pth
+temp_output/
