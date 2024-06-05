@@ -3,3 +3,5 @@ __pycache__
 *.weights
 temp_output/
 for_video/
+*.yuv
+temp/
