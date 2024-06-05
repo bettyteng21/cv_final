@@ -1,9 +1,7 @@
 material/
-output/
-*.pth
+__pycache__
 *.weights
-
-output/
-output_0/
-
-__pycache__/
+temp_output/
+for_video/
+*.yuv
+temp/
