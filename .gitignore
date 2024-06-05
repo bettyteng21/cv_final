@@ -2,3 +2,4 @@ material/
 __pycache__
 *.weights
 temp_output/
+for_video/

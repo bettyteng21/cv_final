@@ -92,7 +92,7 @@ def feature_matching_for_nbb(blk_target, blk_ref0, blk_ref1, target_idx):
     # Step 5: 計算projection
     if len(dst_pts) > 8:
         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-        compensated_block = cv2.warpPerspective(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]), borderMode=cv2.BORDER_REPLICATE, flags=cv2.INTER_CUBIC)
+        compensated_block = cv2.warpPerspective(blk_ref, M, (blk_ref0.shape[1], blk_ref0.shape[0]), borderMode=cv2.BORDER_REFLECT, flags=cv2.INTER_CUBIC)
 
         if ref_select == 0:
             write_mmap(compensated_block, 16, 1, target_idx) # write model 1
