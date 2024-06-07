@@ -1,7 +1,7 @@
 # Team23 cv final
 ## 環境架設
 * python 3.7
-* ```pip install -r requirement.txt```
+* ```python -m pip install -r requirement.txt```
 
 ## 取出影片中的frames、建Hierarchical-B reference table
 * 下載影片: http://140.112.48.121:5000/sharing/ahoZKsMDw
