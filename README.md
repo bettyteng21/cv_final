@@ -15,4 +15,4 @@
 
 ## 生成yuv影片
 * ```python3 png2yuv.py --so_path 合成影像的資料夾 --gt_path GT的資料夾 --png_dir 暫時的資料夾 --output_file 影片名稱.yuv -n 129``` \
-e.g. ```python png2yuv.py --so_path ./output/ --gt_path ./frames/ --png_dir ./temp/ --output_file output.yuv -n 129```
+e.g. ```python3 png2yuv.py --so_path ./output/ --gt_path ./frames/ --png_dir ./temp/ --output_file output.yuv -n 129```
