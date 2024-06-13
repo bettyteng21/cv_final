@@ -48,11 +48,11 @@ def global_motion_compensation(ref_frame0, ref_frame1, motion_vectors, block_siz
         if 0 <= y0 < height - block_size and 0 <= x0 < width - block_size:
             ref_block0 = ref_frame0[y0:y0 + block_size, x0:x0 + block_size]
             weights[y:y + block_size, x:x + block_size] += 1
-            predicted_frame[y:y + block_size, x:x + block_size] += ref_block0 * (1 - (y0 % 1)) * (1 - (x0 % 1))
+            predicted_frame[y:y + block_size, x:x + block_size] += ref_block0 
         if 0 <= y1 < height - block_size and 0 <= x1 < width - block_size:
             ref_block1 = ref_frame1[y1:y1 + block_size, x1:x1 + block_size]
             weights[y:y + block_size, x:x + block_size] += 1
-            predicted_frame[y:y + block_size, x:x + block_size] += ref_block1 * (1 - (y1 % 1)) * (1 - (x1 % 1))
+            predicted_frame[y:y + block_size, x:x + block_size] += ref_block1
 
     non_zero_weights = weights > 0
     predicted_frame[non_zero_weights] /= weights[non_zero_weights]
